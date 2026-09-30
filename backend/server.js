@@ -88,19 +88,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Server (not needed on Vercel — Vercel calls the handler directly)
-const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`=================================================`);
-    console.log(`🎬 QONEQT AI VIDEO STUDIO ENGINE RUNNING ON PORT: ${PORT}`);
-    console.log(`🔗 Local Base URL: http://localhost:${PORT}`);
-    console.log(`📡 Ready for AI Pipeline & FFmpeg Video Generation`);
-    console.log(`=================================================`);
-  });
-};
-
-startServer();
+// On Vercel: just connect DB and export app — do NOT call app.listen()
+// On local: start the HTTP server normally
+if (isVercel) {
+  // Connect DB on cold start without binding a port
+  connectDB().catch((err) => console.error('[Server] DB connection error:', err));
+} else {
+  const startServer = async () => {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`=================================================`);
+      console.log(`🎬 QONEQT AI VIDEO STUDIO ENGINE RUNNING ON PORT: ${PORT}`);
+      console.log(`🔗 Local Base URL: http://localhost:${PORT}`);
+      console.log(`📡 Ready for AI Pipeline & FFmpeg Video Generation`);
+      console.log(`=================================================`);
+    });
+  };
+  startServer();
+}
 
 // Export for Vercel serverless handler
 export default app;
