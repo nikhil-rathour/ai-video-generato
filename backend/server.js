@@ -2,11 +2,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { connectDB } from './src/config/db.js';
 import './src/config/ffmpeg.js';
 import './src/config/cloudinary.js';
+import { getTempDir, getPublicOutputsDir, getPublicUploadsDir, isVercel } from './src/config/paths.js';
 
 import videoRoutes from './src/routes/videoRoutes.js';
 import qoneqtRoutes from './src/routes/qoneqtRoutes.js';
@@ -18,20 +18,18 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Ensure directories exist
-const tempDir = path.resolve('temp');
-const publicOutputs = path.resolve('public', 'outputs');
-const publicUploads = path.resolve('public', 'uploads');
-
-[tempDir, publicOutputs, publicUploads].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+// Ensure writable directories exist (uses /tmp on Vercel, ./temp locally)
+getTempDir();
+const publicOutputs = getPublicOutputsDir();
+const publicUploads = getPublicUploadsDir();
 
 // Middlewares
+const allowedOrigins = process.env.FRONTEND_URL
+  ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']
+  : '*';
+
 app.use(cors({
-  origin: '*',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -39,15 +37,17 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static file hosting for outputs, uploads and presentations
-app.use(express.static(path.resolve('public')));
-app.use('/outputs', express.static(publicOutputs));
-app.use('/uploads', express.static(publicUploads));
-app.use('/temp', express.static(tempDir));
+// Static file hosting for outputs, uploads (only meaningful locally; on Vercel use Cloudinary)
+if (!isVercel) {
+  const publicDir = path.resolve(__dirname, 'public');
+  app.use(express.static(publicDir));
+  app.use('/outputs', express.static(publicOutputs));
+  app.use('/uploads', express.static(publicUploads));
 
-app.get('/presentation', (req, res) => {
-  res.sendFile(path.resolve('public', 'presentation.html'));
-});
+  app.get('/presentation', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'public', 'presentation.html'));
+  });
+}
 
 // API Routes
 app.use('/api/video', videoRoutes);
@@ -61,7 +61,8 @@ app.get('/api/health', (req, res) => {
     status: 'online',
     app: 'Qoneqt AI Video Studio Engine',
     timestamp: new Date().toISOString(),
-    version: '1.0.0'
+    version: '1.0.0',
+    environment: isVercel ? 'vercel' : 'local'
   });
 });
 
@@ -87,7 +88,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Server
+// Start Server (not needed on Vercel — Vercel calls the handler directly)
 const startServer = async () => {
   await connectDB();
   app.listen(PORT, () => {
@@ -100,3 +101,6 @@ const startServer = async () => {
 };
 
 startServer();
+
+// Export for Vercel serverless handler
+export default app;

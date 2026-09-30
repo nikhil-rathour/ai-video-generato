@@ -8,3 +8,7 @@ public/outputs/*
 public/uploads/*
 !public/uploads/.gitkeep
 *.log
+
+
+# Vercel
+.vercel/

@@ -122,7 +122,6 @@ HP/
 │   │       └── progressEmitter.js  # Server-Sent Events (SSE) broadcaster
 │   ├── public/outputs/      # Rendered MP4s and thumbnails
 │   ├── temp/                # Audio & video scene workspace
-│   ├── Dockerfile
 │   ├── package.json
 │   └── server.js
 ├── frontend/
@@ -133,10 +132,8 @@ HP/
 │   │   ├── App.jsx
 │   │   ├── index.css
 │   │   └── main.jsx
-│   ├── Dockerfile
 │   ├── nginx.conf
 │   └── package.json
-├── docker-compose.yml
 ├── .env.example
 └── README.md
 ```
@@ -207,16 +204,6 @@ Frontend runs on `http://localhost:5173` (or `http://localhost:5174`).
 
 ---
 
-## 🐳 Docker Deployment
-
-To launch the full stack with native FFmpeg in Docker containers:
-
-```bash
-docker-compose up --build -d
-```
-Access the application at `http://localhost:5173`.
-
----
 
 ## 📡 REST API Documentation
 

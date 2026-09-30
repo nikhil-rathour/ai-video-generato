@@ -61,7 +61,7 @@ export class SettingsController {
           name: 'MongoDB Atlas',
           role: 'Primary Database & Analytics Store',
           configured: isDbConnected(),
-          status: isDbConnected() ? 'CONNECTED' : 'IN_MEMORY_MODE',
+          status: isDbConnected() ? 'CONNECTED' : 'DISCONNECTED',
         },
         qoneqt: {
           name: 'Qoneqt Global Feed Integration',

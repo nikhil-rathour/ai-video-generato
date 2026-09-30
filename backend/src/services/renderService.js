@@ -6,6 +6,7 @@ import { ffmpegPath, ffprobePath } from '../config/ffmpeg.js';
 import { generateAssFile } from '../utils/captionGenerator.js';
 import { ensureBackgroundMusic } from '../utils/bgmProvider.js';
 import StorageService from './storageService.js';
+import { getTempDir } from '../config/paths.js';
 
 export class RenderService {
   /**
@@ -13,10 +14,7 @@ export class RenderService {
    */
   static async renderVideo({ scenes, voiceLocalPath, videoId, onProgress }) {
     console.log(`[Render Service] Starting FFmpeg video rendering for ${videoId}...`);
-    const tempDir = path.resolve('temp', videoId);
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
+    const tempDir = getTempDir(videoId);
 
     const ffExe = ffmpegPath || 'ffmpeg';
     const totalDuration = scenes.reduce((acc, s) => acc + (Number(s.duration) || 5), 0);

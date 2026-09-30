@@ -1,10 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { cloudinary, isCloudinaryActive } from '../config/cloudinary.js';
+import { getPublicOutputsDir } from '../config/paths.js';
 
 export class StorageService {
   /**
-   * Uploads a file to Cloudinary if configured; otherwise serves locally
+   * Uploads a file to Cloudinary if configured; otherwise serves locally.
+   * On Vercel (no persistent disk), Cloudinary is strongly recommended.
    */
   static async uploadFile(filePath, options = {}) {
     const {
@@ -41,34 +43,22 @@ export class StorageService {
       }
     }
 
-    // Local serving fallback
-    // Copy to public/outputs if not already in public/
-    const isAlreadyInPublic = filePath.includes(path.join('backend', 'public')) || filePath.includes('public');
-    let targetRelativePath = '';
-
-    if (!isAlreadyInPublic) {
-      const publicOutputDir = path.resolve('public', 'outputs');
-      if (!fs.existsSync(publicOutputDir)) {
-        fs.mkdirSync(publicOutputDir, { recursive: true });
-      }
-      const destPath = path.join(publicOutputDir, fileName);
-      if (filePath !== destPath) {
-        fs.copyFileSync(filePath, destPath);
-      }
-      targetRelativePath = `/outputs/${fileName}`;
-    } else {
-      const relative = filePath.replace(/.*public[\\/]/, '');
-      targetRelativePath = `/${relative.replace(/\\/g, '/')}`;
+    // Local serving fallback (not suitable for Vercel production — configure Cloudinary)
+    const publicOutputDir = getPublicOutputsDir();
+    const destPath = path.join(publicOutputDir, fileName);
+    if (filePath !== destPath) {
+      fs.copyFileSync(filePath, destPath);
     }
 
     const port = process.env.PORT || 5000;
     const baseUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
-    const fullUrl = `${baseUrl}${targetRelativePath}`;
+    const relativePath = `/outputs/${fileName}`;
+    const fullUrl = `${baseUrl}${relativePath}`;
 
     return {
       provider: 'local',
       url: fullUrl,
-      relativePath: targetRelativePath,
+      relativePath,
       localPath: filePath,
     };
   }

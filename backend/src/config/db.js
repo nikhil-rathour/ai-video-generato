@@ -1,42 +1,36 @@
 import mongoose from 'mongoose';
 import dns from 'dns';
 
-// Fix for Windows / Node.js SRV lookup issues with MongoDB Atlas
-try {
-  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
-} catch (e) {
-  // Ignore if unable to set custom DNS
-}
+// Force Node.js to use Google DNS for reliable MongoDB Atlas SRV resolution
+dns.setDefaultResultOrder('ipv4first');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 let isConnected = false;
-let inMemoryStore = {
-  users: [],
-  projects: [],
-  videoGenerations: [],
-  scenes: [],
-  mediaAssets: []
-};
 
 export const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
-  if (!uri || uri.includes('YOUR_MONGODB_URI') || uri.trim() === '') {
-    console.log('[Database] MONGODB_URI not configured. Operating in high-performance local store mode.');
-    return false;
+
+  if (!uri || uri.trim() === '') {
+    throw new Error('[Database] MONGODB_URI is not set. Please add it to your environment variables.');
+  }
+
+  if (isConnected) {
+    console.log('[Database] Already connected to MongoDB Atlas.');
+    return;
   }
 
   try {
     const conn = await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 10000,
+      family: 4, // Use IPv4, avoids IPv6 DNS issues
     });
     isConnected = true;
-    console.log(`[Database] MongoDB Atlas Connected: ${conn.connection.host}`);
-    return true;
+    console.log(`[Database] ✅ MongoDB Atlas Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.warn(`[Database] MongoDB connection error (${error.message}). Switched to local persistent memory mode.`);
-    isConnected = false;
-    return false;
+    console.error(`[Database] ❌ MongoDB Atlas connection failed: ${error.message}`);
+    // Re-throw so the server does not silently start with no DB
+    throw error;
   }
 };
 
-export const getStore = () => inMemoryStore;
 export const isDbConnected = () => isConnected;

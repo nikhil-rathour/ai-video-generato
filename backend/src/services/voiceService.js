@@ -5,6 +5,7 @@ import { exec, execSync } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
 import { ffmpegPath, ffprobePath } from '../config/ffmpeg.js';
 import StorageService from './storageService.js';
+import { getTempDir } from '../config/paths.js';
 
 export class VoiceService {
   /**
@@ -12,10 +13,7 @@ export class VoiceService {
    */
   static async generateVoice(narration, videoId, voiceId = '21m00Tcm4TlvDq8ikWAM') { // Default to ElevenLabs "Rachel"
     console.log(`[Voice Service] Generating voiceover for narration (${narration.length} chars)...`);
-    const tempDir = path.resolve('temp', videoId);
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
+    const tempDir = getTempDir(videoId);
 
     const outputMp3 = path.join(tempDir, `voiceover_${uuidv4().slice(0, 8)}.mp3`);
     let voiceProvider = 'ElevenLabs';

@@ -11,6 +11,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       port,
+      // Dev proxy: forward /api and /outputs to the local backend.
+      // On Vercel (production), VITE_API_BASE_URL must be set to the full backend URL.
       proxy: {
         '/api': {
           target: backendUrl,
@@ -19,6 +21,21 @@ export default defineConfig(({ mode }) => {
         '/outputs': {
           target: backendUrl,
           changeOrigin: true
+        }
+      }
+    },
+    build: {
+      outDir: 'dist',
+      // Generate a manifest for cache-busting
+      manifest: true,
+      rollupOptions: {
+        output: {
+          // Split vendor code for better caching
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            motion: ['framer-motion'],
+            ui: ['lucide-react', 'clsx', 'tailwind-merge']
+          }
         }
       }
     }

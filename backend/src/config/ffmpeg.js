@@ -10,7 +10,8 @@ let ffprobePath = null;
 
 // 1. Try system ffmpeg
 try {
-  const sysFfmpeg = execSync('where.exe ffmpeg', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split('\r\n')[0];
+  const cmd = process.platform === 'win32' ? 'where.exe ffmpeg' : 'which ffmpeg';
+  const sysFfmpeg = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split(/\r?\n/)[0];
   if (sysFfmpeg && fs.existsSync(sysFfmpeg)) {
     ffmpegPath = sysFfmpeg;
   }
@@ -62,7 +63,8 @@ if (!ffmpegPath && ffmpegInstaller?.path) {
 
 // Same for ffprobe
 try {
-  const sysFfprobe = execSync('where.exe ffprobe', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split('\r\n')[0];
+  const cmd2 = process.platform === 'win32' ? 'where.exe ffprobe' : 'which ffprobe';
+  const sysFfprobe = execSync(cmd2, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split(/\r?\n/)[0];
   if (sysFfprobe && fs.existsSync(sysFfprobe)) {
     ffprobePath = sysFfprobe;
   }
@@ -71,7 +73,9 @@ try {
 }
 
 if (!ffprobePath && ffmpegPath) {
-  const candidate = path.join(path.dirname(ffmpegPath), 'ffprobe.exe');
+  // On Linux just check for `ffprobe` next to `ffmpeg`
+  const ext = process.platform === 'win32' ? '.exe' : '';
+  const candidate = path.join(path.dirname(ffmpegPath), `ffprobe${ext}`);
   if (fs.existsSync(candidate)) {
     ffprobePath = candidate;
   }

@@ -6,6 +6,7 @@ import { exec } from 'child_process';
 import { ffmpegPath } from '../config/ffmpeg.js';
 import StorageService from './storageService.js';
 import MediaAsset from '../models/MediaAsset.js';
+import { getTempDir } from '../config/paths.js';
 
 export class MediaService {
   /**
@@ -13,10 +14,7 @@ export class MediaService {
    */
   static async collectSceneAssets(scenes, videoId) {
     console.log(`[Media Service] Collecting visual assets for ${scenes.length} scenes...`);
-    const tempDir = path.resolve('temp', videoId);
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
-    }
+    const tempDir = getTempDir(videoId);
 
     const collectedAssets = [];
 

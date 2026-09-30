@@ -133,7 +133,7 @@ $$\text{Topic / Idea Prompt} \longrightarrow \text{Multimodal AI Storyboard} \lo
 ### 2. Scalability & Cost Feasibility
 - **Marginal Cost per Video:** Near **$0.00 to $0.02** using free tiers (Gemini 15 RPM free, Groq free tier, Pexels 20,000 req/month free, Cloudinary 25GB free).
 - **Asynchronous Architecture:** Handles concurrent user generation requests without blocking.
-- **Deployable Anywhere:** Fully containerized with `Dockerfile` and `docker-compose.yml` for Render, Railway, Vercel, or AWS.
+- **Deployable Anywhere:** Hosted on Render, Railway, Vercel, or AWS with standard Node.js deployments.
 
 ---
 
