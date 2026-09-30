@@ -38,8 +38,10 @@ export default function Studio() {
   useEffect(() => {
     if (!currentVideoId) return;
 
-    console.log(`[SSE] Subscribing to progress stream for video: ${currentVideoId}`);
-    const eventSource = new EventSource(`/api/video/progress/${currentVideoId}`);
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
+    const sseUrl = `${apiBase.replace(/\/$/, '')}/video/progress/${currentVideoId}`;
+    console.log(`[SSE] Subscribing to progress stream at: ${sseUrl}`);
+    const eventSource = new EventSource(sseUrl);
 
     eventSource.onmessage = (event) => {
       try {
