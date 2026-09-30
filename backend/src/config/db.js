@@ -11,7 +11,8 @@ export const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
   if (!uri || uri.trim() === '') {
-    throw new Error('[Database] MONGODB_URI is not set. Please add it to your environment variables.');
+    console.warn('[Database] ⚠️  MONGODB_URI is not set — DB features will be unavailable.');
+    return;
   }
 
   if (isConnected) {
@@ -28,8 +29,7 @@ export const connectDB = async () => {
     console.log(`[Database] ✅ MongoDB Atlas Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`[Database] ❌ MongoDB Atlas connection failed: ${error.message}`);
-    // Re-throw so the server does not silently start with no DB
-    throw error;
+    // Log but don't crash the serverless function — DB-dependent routes will fail gracefully
   }
 };
 
