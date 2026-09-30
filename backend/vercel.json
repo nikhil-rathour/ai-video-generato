@@ -1,12 +1,14 @@
 {
   "version": 2,
   "name": "qoneqt-ai-video-studio-backend",
+  "installCommand": "npm install --foreground-scripts",
   "builds": [
     {
       "src": "server.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["src/**", "public/**"]
+        "includeFiles": ["src/**", "public/**"],
+        "maxDuration": 60
       }
     }
   ],
@@ -17,6 +19,12 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "npm_config_foreground_scripts": "true"
+  },
+  "functions": {
+    "server.js": {
+      "maxDuration": 60
+    }
   }
 }
