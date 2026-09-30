@@ -21,10 +21,5 @@
   "env": {
     "NODE_ENV": "production",
     "npm_config_foreground_scripts": "true"
-  },
-  "functions": {
-    "server.js": {
-      "maxDuration": 60
-    }
   }
 }
