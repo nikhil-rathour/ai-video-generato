@@ -67,16 +67,10 @@ app.get('/api/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send(`
-    <html>
-      <head><title>Qoneqt AI Video Studio API</title></head>
-      <body style="font-family: sans-serif; background: #0b0f19; color: #fff; padding: 40px; text-align: center;">
-        <h1 style="color: #8b5cf6;">🚀 Qoneqt AI Video Studio Backend Running</h1>
-        <p>API is healthy and listening on port ${PORT}</p>
-        <p><a href="/api/settings/status" style="color: #06b6d4;">Inspect API Integration Status</a></p>
-      </body>
-    </html>
-  `);
+  res.send({
+    status: 'online',
+    app: 'Qoneqt AI Video Studio Engine',
+  });
 });
 
 // Error handling middleware
