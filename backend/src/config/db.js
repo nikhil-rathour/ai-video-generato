@@ -1,9 +1,15 @@
 import mongoose from 'mongoose';
 import dns from 'dns';
 
-// Force Node.js to use Google DNS for reliable MongoDB Atlas SRV resolution
-dns.setDefaultResultOrder('ipv4first');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+// Force Node.js to use Google DNS only for local development (not on Vercel serverless where 8.8.8.8:53 is blocked)
+if (!process.env.VERCEL) {
+  try {
+    dns.setDefaultResultOrder('ipv4first');
+    dns.setServers(['8.8.8.8', '8.8.4.4']);
+  } catch (e) {
+    console.warn('[Database] Custom DNS setup skipped:', e.message);
+  }
+}
 
 let isConnected = false;
 

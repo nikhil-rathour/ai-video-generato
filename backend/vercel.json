@@ -1,17 +1,16 @@
 {
   "version": 2,
   "name": "qoneqt-ai-video-studio-backend",
-  "installCommand": "npm install",
   "functions": {
     "server.js": {
       "maxDuration": 60,
-      "includeFiles": "src/**,public/**"
+      "includeFiles": "node_modules/@ffmpeg-installer/**,node_modules/@ffprobe-installer/**,src/**,public/**"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "server.js"
+      "source": "/(.*)",
+      "destination": "/server.js"
     }
   ],
   "env": {

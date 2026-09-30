@@ -73,13 +73,31 @@ app.get('/', (req, res) => {
   });
 });
 
+// 404 Catch-All Handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    path: req.originalUrl || req.url,
+    method: req.method
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('[Server Error]', err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message: err.message
+    message: err.message,
+    stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
   });
+});
+
+// Process-level handlers so serverless function never terminates silently
+process.on('uncaughtException', (err) => {
+  console.error('[CRITICAL Uncaught Exception]:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[CRITICAL Unhandled Rejection]:', reason);
 });
 
 // On Vercel: just connect DB and export app — do NOT call app.listen()

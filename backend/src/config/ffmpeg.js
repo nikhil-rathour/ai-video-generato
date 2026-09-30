@@ -1,6 +1,4 @@
 import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-import ffprobeInstaller from '@ffprobe-installer/ffprobe';
 import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
@@ -9,9 +7,26 @@ import { isVercel } from './paths.js';
 let ffmpegPath = null;
 let ffprobePath = null;
 
-// On Vercel: skip system PATH lookup (restricted shell) — go straight to @ffmpeg-installer
+// Dynamically load installers inside try/catch so missing binaries on Vercel never crash the app
+let ffmpegInstaller = null;
+let ffprobeInstaller = null;
+
+try {
+  const mod = await import('@ffmpeg-installer/ffmpeg');
+  ffmpegInstaller = mod.default || mod;
+} catch (e) {
+  console.warn('[FFmpeg Config] @ffmpeg-installer package failed to load:', e.message || e);
+}
+
+try {
+  const mod = await import('@ffprobe-installer/ffprobe');
+  ffprobeInstaller = mod.default || mod;
+} catch (e) {
+  console.warn('[FFmpeg Config] @ffprobe-installer package failed to load:', e.message || e);
+}
+
+// 1. On local environment: check system ffmpeg and local paths
 if (!isVercel) {
-  // 1. Try system ffmpeg
   try {
     const cmd = process.platform === 'win32' ? 'where.exe ffmpeg' : 'which ffmpeg';
     const sysFfmpeg = execSync(cmd, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split(/\r?\n/)[0];
@@ -22,7 +37,7 @@ if (!isVercel) {
     // Not in PATH
   }
 
-  // 2. Check Gyan.FFmpeg standard install paths on Windows
+  // Check Gyan.FFmpeg standard install paths on Windows
   if (!ffmpegPath) {
     const gyanPaths = [
       path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'WinGet', 'Packages', 'Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe'),
@@ -57,7 +72,7 @@ if (!isVercel) {
     }
   }
 
-  // Same system lookup for ffprobe
+  // ffprobe system lookup
   try {
     const cmd2 = process.platform === 'win32' ? 'where.exe ffprobe' : 'which ffprobe';
     const sysFfprobe = execSync(cmd2, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim().split(/\r?\n/)[0];
@@ -77,12 +92,21 @@ if (!isVercel) {
   }
 }
 
-// Final fallback: @ffmpeg-installer / @ffprobe-installer (always used on Vercel)
+// 2. Fallback to @ffmpeg-installer / @ffprobe-installer
 if (!ffmpegPath && ffmpegInstaller?.path) {
-  ffmpegPath = ffmpegInstaller.path;
+  try {
+    if (fs.existsSync(ffmpegInstaller.path)) {
+      ffmpegPath = ffmpegInstaller.path;
+    }
+  } catch { /* ignore */ }
 }
+
 if (!ffprobePath && ffprobeInstaller?.path) {
-  ffprobePath = ffprobeInstaller.path;
+  try {
+    if (fs.existsSync(ffprobeInstaller.path)) {
+      ffprobePath = ffprobeInstaller.path;
+    }
+  } catch { /* ignore */ }
 }
 
 if (ffmpegPath) {
