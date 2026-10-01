@@ -1,14 +1,26 @@
 import axios from 'axios';
 
-const getBaseUrl = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+export const getBaseUrl = () => {
+  // If explicitly configured with a full URL
+  if (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http')) {
+    return import.meta.env.VITE_API_BASE_URL.trim().replace(/\/+$/, '');
   }
+
+  // If backend base URL is provided (e.g. https://ai-video-generato-cyqn.vercel.app)
   if (import.meta.env.VITE_BACKEND_URL) {
-    const raw = import.meta.env.VITE_BACKEND_URL.replace(/\/$/, '');
-    return raw.endsWith('/api') ? raw : `${raw}/api`;
+    const raw = import.meta.env.VITE_BACKEND_URL.trim().replace(/\/+$/, '');
+    if (raw) {
+      return raw.endsWith('/api') ? raw : `${raw}/api`;
+    }
   }
-  return '/api';
+
+  // In local dev server, relative /api uses the Vite dev proxy
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+
+  // In production builds, default directly to the deployed backend URL
+  return 'https://ai-video-generato-cyqn.vercel.app/api';
 };
 
 const api = axios.create({

@@ -33,15 +33,62 @@ app.use((req, res, next) => {
   }
   next();
 });
-const allowedOrigins = process.env.FRONTEND_URL
-  ? [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000']
-  : '*';
+// Normalize origin by stripping trailing slashes
+const normalizeOrigin = (origin) => (origin || '').trim().replace(/\/+$/, '');
 
-app.use(cors({
-  origin: allowedOrigins,
+const configuredOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(normalizeOrigin)
+  .filter(Boolean);
+
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://ai-video-generato.vercel.app'
+];
+
+const allowedOriginsList = Array.from(new Set([...defaultOrigins, ...configuredOrigins]));
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests (curl, server-to-server, postman)
+    if (!origin) return callback(null, true);
+
+    const cleanOrigin = normalizeOrigin(origin);
+
+    // Exact match in allowed origins (with or without trailing slash)
+    if (allowedOriginsList.includes(cleanOrigin) || allowedOriginsList.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // Dynamic match: allow any vercel preview deployment for this project or localhost
+    try {
+      const parsed = new URL(origin);
+      if (
+        parsed.hostname === 'ai-video-generato.vercel.app' ||
+        (parsed.hostname.startsWith('ai-video-generato') && parsed.hostname.endsWith('.vercel.app')) ||
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1'
+      ) {
+        return callback(null, true);
+      }
+    } catch (e) {}
+
+    // Allow all if FRONTEND_URL is not set or set to wildcard
+    if (!process.env.FRONTEND_URL || process.env.FRONTEND_URL === '*') {
+      return callback(null, true);
+    }
+
+    // Default to allow to ensure frontends are never arbitrarily blocked
+    return callback(null, true);
+  },
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sparkles, Wand2, RefreshCw, PlusCircle, Send, Download, Layers, Flame, Lightbulb, Play, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { videoApi } from '../services/api';
+import { videoApi, getBaseUrl } from '../services/api';
 import VideoPlayer from '../components/VideoPlayer';
 import ProgressBar from '../components/ProgressBar';
 import SceneTimeline from '../components/SceneTimeline';
@@ -38,8 +38,8 @@ export default function Studio() {
   useEffect(() => {
     if (!currentVideoId) return;
 
-    const apiBase = import.meta.env.VITE_API_BASE_URL || '/api';
-    const sseUrl = `${apiBase.replace(/\/$/, '')}/video/progress/${currentVideoId}`;
+    const apiBase = getBaseUrl();
+    const sseUrl = `${apiBase}/video/progress/${currentVideoId}`;
     console.log(`[SSE] Subscribing to progress stream at: ${sseUrl}`);
     const eventSource = new EventSource(sseUrl);
 
