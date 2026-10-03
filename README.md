@@ -1,4 +1,4 @@
-# Qoneqt AI Video Studio — Autonomous Vertical Content Pipeline
+# Qoneqt AI Video Studio  by Team FLEXA_BIT— Autonomous Vertical Content Pipeline
 
 > **Qoneqt &times; CTRL FREAK AI Challenge** &bull; An enterprise-grade, end-to-end autonomous video production pipeline that transforms raw topics, ideas, or trends into ready-to-publish 9:16 vertical videos rendered with FFmpeg, complete with AI scripting, multimodal asset curation, neural voiceovers, burn-in captions, and direct publishing to the **Qoneqt Global Feed**.
 
