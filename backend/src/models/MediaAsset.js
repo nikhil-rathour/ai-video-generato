@@ -15,6 +15,7 @@ const MediaAssetSchema = new mongoose.Schema({
   query:         { type: String },
 }, {
   timestamps: true,
+  bufferCommands: false,
 });
 
 const MediaAsset = mongoose.model('MediaAsset', MediaAssetSchema);

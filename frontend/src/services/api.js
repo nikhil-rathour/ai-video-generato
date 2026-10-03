@@ -25,7 +25,7 @@ export const getBaseUrl = () => {
 
 const api = axios.create({
   baseURL: getBaseUrl(),
-  timeout: 60000,
+  timeout: 300000, // 5 min — matches Vercel backend maxDuration
 });
 
 export const videoApi = {

@@ -16,12 +16,10 @@ export class MediaService {
     console.log(`[Media Service] Collecting visual assets for ${scenes.length} scenes...`);
     const tempDir = getTempDir(videoId);
 
-    const collectedAssets = [];
-
-    for (const scene of scenes) {
-      const asset = await this.getMediaForScene(scene, videoId, tempDir);
-      collectedAssets.push(asset);
-    }
+    // Fetch all scene media in parallel to drastically reduce pipeline duration
+    const collectedAssets = await Promise.all(
+      scenes.map(scene => this.getMediaForScene(scene, videoId, tempDir))
+    );
 
     return collectedAssets;
   }

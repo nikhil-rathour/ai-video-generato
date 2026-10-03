@@ -39,6 +39,7 @@ const VideoGenerationSchema = new mongoose.Schema({
   mediaProvider:    { type: String, default: 'Pexels' },
 }, {
   timestamps: true, // adds createdAt & updatedAt automatically
+  bufferCommands: false, // Prevents queries from hanging indefinitely if DB is disconnected
 });
 
 const VideoGeneration = mongoose.model('VideoGeneration', VideoGenerationSchema);

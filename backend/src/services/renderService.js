@@ -92,13 +92,13 @@ export class RenderService {
 
     await new Promise((resolve, reject) => {
       // Use ass filter if possible
-      const cmd = `"${ffExe}" -y -i "${rawVideoMerged}" -i "${voiceLocalPath}" -i "${bgmFile}" -filter_complex "${complexFilter}" -map 0:v -map "[a_out]" -vf "ass='${escapedAssPath}'" -c:v libx264 -preset medium -crf 19 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}"`;
+      const cmd = `"${ffExe}" -y -i "${rawVideoMerged}" -i "${voiceLocalPath}" -i "${bgmFile}" -filter_complex "${complexFilter}" -map 0:v -map "[a_out]" -vf "ass='${escapedAssPath}'" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}"`;
 
       exec(cmd, (err) => {
         if (err) {
           console.warn(`[Render Service] ASS filter error (${err.message}), falling back to direct video+audio compositing...`);
           // Fallback without ASS filter if fontconfig/libass issues arise
-          const fallbackCmd = `"${ffExe}" -y -i "${rawVideoMerged}" -i "${voiceLocalPath}" -i "${bgmFile}" -filter_complex "${complexFilter}" -map 0:v -map "[a_out]" -c:v libx264 -preset fast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}"`;
+          const fallbackCmd = `"${ffExe}" -y -i "${rawVideoMerged}" -i "${voiceLocalPath}" -i "${bgmFile}" -filter_complex "${complexFilter}" -map 0:v -map "[a_out]" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -shortest "${finalMp4Path}"`;
           exec(fallbackCmd, (err2) => {
             if (err2) return reject(new Error(`Final render composite failed: ${err2.message}`));
             resolve(finalMp4Path);

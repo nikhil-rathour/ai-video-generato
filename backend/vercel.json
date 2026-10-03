@@ -3,7 +3,8 @@
   "name": "qoneqt-ai-video-studio-backend",
   "functions": {
     "server.js": {
-      "maxDuration": 60,
+      "maxDuration": 300,
+      "memory": 1024,
       "includeFiles": "node_modules/@ffmpeg-installer/**,node_modules/@ffprobe-installer/**,src/**,public/**"
     }
   },

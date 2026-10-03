@@ -138,8 +138,17 @@ export default function Studio() {
         setVideoData(response.video);
       }
     } catch (err) {
-      setIsGenerating(false);
-      setError(err.response?.data?.error || err.message);
+      // If it's a network timeout, the backend may still be running.
+      // Don't show failure yet — let the SSE/polling fallback handle it.
+      const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout') || err.message?.includes('60000');
+      if (isTimeout) {
+        console.warn('[Studio] Axios timeout — backend still running, switching to polling mode');
+        setCurrentStep('Pipeline running... (checking progress)');
+        // Don't stop generating — polling will catch the result
+      } else {
+        setIsGenerating(false);
+        setError(err.response?.data?.error || err.message);
+      }
     }
   };
 

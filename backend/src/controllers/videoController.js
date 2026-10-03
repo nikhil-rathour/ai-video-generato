@@ -5,6 +5,34 @@ import MediaService from '../services/mediaService.js';
 import VoiceService from '../services/voiceService.js';
 import RenderService from '../services/renderService.js';
 import progressEmitter from '../utils/progressEmitter.js';
+import { isDbConnected } from '../config/db.js';
+
+let vercelWaitUntil = null;
+try {
+  const vFunc = await import('@vercel/functions');
+  vercelWaitUntil = vFunc.waitUntil;
+} catch (e) {
+  // Local or non-Vercel environment
+}
+
+// In-memory fallback cache so jobs never fail or hang if MongoDB is cold/unavailable
+const memoryVideoStore = new Map();
+
+const updateVideoJob = async (id, update) => {
+  const currentMem = memoryVideoStore.get(id) || {};
+  const updatedMem = { ...currentMem, ...update, updatedAt: new Date() };
+  memoryVideoStore.set(id, updatedMem);
+
+  if (isDbConnected()) {
+    try {
+      const doc = await VideoGeneration.findByIdAndUpdate(id, update, { new: true });
+      if (doc) return doc;
+    } catch (e) {
+      console.warn(`[Video Controller] DB update error for ${id} (using memory fallback):`, e.message);
+    }
+  }
+  return updatedMem;
+};
 
 export class VideoController {
   /**
@@ -17,8 +45,10 @@ export class VideoController {
       return res.status(400).json({ error: 'Topic or idea prompt is required' });
     }
 
-    // 1. Create DB record in QUEUED state
-    const videoGen = await VideoGeneration.create({
+    let videoId = uuidv4();
+    let videoGen = {
+      _id: videoId,
+      id: videoId,
       topic,
       duration: Number(duration) || 30,
       style,
@@ -27,11 +57,33 @@ export class VideoController {
       status: VideoStatus.QUEUED,
       progress: 5,
       currentStep: 'Initializing AI Engine...',
-    });
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    const videoId = videoGen._id.toString();
+    // 1. Create DB record in QUEUED state (with graceful fallback)
+    if (isDbConnected()) {
+      try {
+        const created = await VideoGeneration.create({
+          topic,
+          duration: Number(duration) || 30,
+          style,
+          language,
+          aspectRatio,
+          status: VideoStatus.QUEUED,
+          progress: 5,
+          currentStep: 'Initializing AI Engine...',
+        });
+        videoId = created._id.toString();
+        videoGen = created;
+      } catch (dbErr) {
+        console.warn('[Video Controller] DB create fallback to memory store:', dbErr.message);
+      }
+    }
 
-    // Respond immediately with created job ID so frontend can connect to SSE stream
+    memoryVideoStore.set(videoId, videoGen);
+
+    // Respond immediately with created job ID so frontend can connect to SSE/polling
     res.status(202).json({
       success: true,
       message: 'Video generation started',
@@ -39,11 +91,11 @@ export class VideoController {
       video: videoGen
     });
 
-    // Run pipeline asynchronously
-    (async () => {
+    // Build the pipeline as a named promise so waitUntil can keep the function alive on Vercel
+    const runPipeline = async () => {
       try {
         // Step 1: LLM Scripting
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           status: VideoStatus.SCRIPTING,
           progress: 15,
           currentStep: 'Topic analyzed & generating structured viral script...'
@@ -61,7 +113,7 @@ export class VideoController {
           language
         });
 
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           title: scriptData.title,
           description: scriptData.caption,
           hashtags: scriptData.hashtags,
@@ -78,8 +130,8 @@ export class VideoController {
           script: scriptData
         });
 
-        // Step 2: Media Asset Pipeline
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        // Step 2: Media Asset Pipeline (parallel fetch)
+        await updateVideoJob(videoId, {
           status: VideoStatus.COLLECTING_MEDIA,
           progress: 40,
           currentStep: 'Collecting stock video & generating visual assets...'
@@ -92,7 +144,7 @@ export class VideoController {
 
         const scenesWithMedia = await MediaService.collectSceneAssets(scriptData.scenes, videoId);
 
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           scenes: scenesWithMedia,
           progress: 55,
           currentStep: 'Visual assets processed & optimized.'
@@ -105,7 +157,7 @@ export class VideoController {
         });
 
         // Step 3: Voiceover Pipeline
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           status: VideoStatus.GENERATING_VOICE,
           progress: 65,
           currentStep: 'Generating high-fidelity voice narration...'
@@ -118,7 +170,7 @@ export class VideoController {
 
         const voiceResult = await VoiceService.generateVoice(scriptData.narration, videoId);
 
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           voiceUrl: voiceResult.url,
           voiceLocalPath: voiceResult.localPath,
           voiceProvider: voiceResult.provider,
@@ -133,7 +185,7 @@ export class VideoController {
         });
 
         // Step 4: Video Composition & FFmpeg Rendering Pipeline
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           status: VideoStatus.RENDERING,
           progress: 80,
           currentStep: 'Rendering 1080x1920 MP4 with audio mixing & captions...'
@@ -159,7 +211,7 @@ export class VideoController {
         });
 
         // Step 5: Completed!
-        const updatedVideo = await VideoGeneration.findByIdAndUpdate(videoId, {
+        const updatedVideo = await updateVideoJob(videoId, {
           status: VideoStatus.COMPLETED,
           progress: 100,
           currentStep: 'Ready-to-publish vertical video ready!',
@@ -178,7 +230,7 @@ export class VideoController {
 
       } catch (pipelineErr) {
         console.error(`[Video Controller] Pipeline error for ${videoId}:`, pipelineErr);
-        await VideoGeneration.findByIdAndUpdate(videoId, {
+        await updateVideoJob(videoId, {
           status: VideoStatus.FAILED,
           errorMessage: pipelineErr.message || 'An error occurred during video rendering'
         });
@@ -187,7 +239,15 @@ export class VideoController {
           error: pipelineErr.message
         });
       }
-    })();
+    };
+
+    // Use @vercel/functions waitUntil to keep the serverless function alive for the full pipeline.
+    // Falls back to fire-and-forget on local or if waitUntil is unavailable.
+    if (vercelWaitUntil) {
+      vercelWaitUntil(runPipeline());
+    } else {
+      runPipeline();
+    }
   }
 
   /**
@@ -265,27 +325,53 @@ export class VideoController {
   }
 
   /**
-   * Fetch single video
+   * Fetch single video — tries DB first, falls back to in-memory active job store
    */
   static async getVideoById(req, res) {
     try {
       const { id } = req.params;
-      const video = await VideoGeneration.findById(id);
-      if (!video) {
-        return res.status(404).json({ error: 'Video not found' });
+
+      // Try DB first
+      if (isDbConnected()) {
+        try {
+          const video = await VideoGeneration.findById(id);
+          if (video) return res.json({ success: true, video });
+        } catch (dbErr) {
+          console.warn('[Video Controller] DB lookup error, checking memory:', dbErr.message);
+        }
       }
-      res.json({ success: true, video });
+
+      // Fall back to in-memory store (for active jobs on serverless cold starts)
+      const memVideo = memoryVideoStore.get(id);
+      if (memVideo) return res.json({ success: true, video: memVideo });
+
+      return res.status(404).json({ error: 'Video not found' });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   }
 
   /**
-   * List all videos
+   * List all videos — merges DB videos with any in-memory active jobs not yet in DB
    */
   static async getAllVideos(req, res) {
     try {
-      const videos = await VideoGeneration.find({});
+      let videos = [];
+
+      if (isDbConnected()) {
+        try {
+          videos = await VideoGeneration.find({}).sort({ createdAt: -1 });
+        } catch (dbErr) {
+          console.warn('[Video Controller] DB list error, using memory store:', dbErr.message);
+        }
+      }
+
+      // Merge in any active in-memory jobs that aren't in the DB result yet
+      const dbIds = new Set(videos.map(v => v._id?.toString() || v.id));
+      for (const [id, job] of memoryVideoStore.entries()) {
+        if (!dbIds.has(id)) videos.unshift(job);
+      }
+
       res.json({ success: true, count: videos.length, videos });
     } catch (err) {
       res.status(500).json({ error: err.message });

@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { connectDB } from './src/config/db.js';
+import { connectDB, ensureConnected, isDbConnected } from './src/config/db.js';
 import './src/config/ffmpeg.js';
 import './src/config/cloudinary.js';
 import { getTempDir, getPublicOutputsDir, getPublicUploadsDir, isVercel } from './src/config/paths.js';
@@ -104,6 +104,18 @@ if (!isVercel) {
     res.sendFile(path.resolve(__dirname, 'public', 'presentation.html'));
   });
 }
+
+// Auto-ensure DB connection for API requests on serverless with 4s timeout
+app.use('/api', async (req, res, next) => {
+  if (isVercel && !isDbConnected()) {
+    try {
+      await ensureConnected(4000);
+    } catch (e) {
+      console.warn('[Server] DB auto-connect warning:', e.message);
+    }
+  }
+  next();
+});
 
 // API Routes
 app.use('/api/video', videoRoutes);
