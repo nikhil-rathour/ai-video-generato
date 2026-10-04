@@ -1,21 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Radio, Heart, MessageCircle, Share2, Sparkles, ExternalLink, RefreshCw, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ArrowUpRight, CheckCircle2, ExternalLink, Radio, Sparkles } from 'lucide-react';
 import { videoApi } from '../services/api';
-import VideoPlayer from '../components/VideoPlayer';
+import SpecularButton from '../components/reactbits/SpecularButton';
 
 export default function Feed({ onSelectVideoForStudio }) {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
   const fetchVideos = async () => {
     setLoading(true);
     try {
-      const res = await videoApi.getAll();
-      const publishedOrCompleted = (res.videos || []).filter(v => v.videoUrl);
-      setVideos(publishedOrCompleted);
-    } catch (err) {
-      console.error('Failed to load feed videos', err);
+      const response = await videoApi.getAll();
+      setVideos((response.videos || []).filter((video) => video.videoUrl));
+    } catch (error) {
+      console.error('Failed to load feed videos', error);
     } finally {
       setLoading(false);
     }
@@ -26,126 +24,55 @@ export default function Feed({ onSelectVideoForStudio }) {
   }, []);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      {/* Feed Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1 rounded bg-pink-500/20 text-pink-400 border border-pink-500/30">
-              <Radio className="w-4 h-4 animate-pulse" />
-            </span>
-            <span className="text-xs font-bold text-pink-400 uppercase tracking-widest">
-              Live Network
-            </span>
+    <main className="relative min-h-[calc(100vh-76px)] overflow-hidden bg-[#08060d] px-4 py-8 sm:px-8 lg:px-12">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(139,92,246,0.24),transparent_34%),radial-gradient(circle_at_0%_70%,rgba(59,130,246,0.12),transparent_28%),radial-gradient(circle_at_100%_60%,rgba(236,72,153,0.1),transparent_28%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-24 h-72 w-[36rem] -translate-x-1/2 rounded-full bg-purple-700/10 blur-3xl" />
+
+      <div className="relative mx-auto max-w-7xl">
+        {loading ? (
+          <div className="flex min-h-64 flex-col items-center justify-center text-center">
+            <div className="h-10 w-10 rounded-full border-2 border-purple-300 border-t-transparent animate-spin" />
+            <p className="mt-4 text-sm text-gray-300">Syncing the global feed…</p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-display font-black text-white">
-            Qoneqt Global Feed
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Explore ready-to-publish and broadcasted vertical video content across the creator ecosystem.
-          </p>
-        </div>
-
-        <button
-          onClick={fetchVideos}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 border border-gray-800 text-xs font-semibold text-gray-200 transition self-start"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh Feed</span>
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-20">
-          <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-sm text-gray-400">Loading Qoneqt Global Feed...</p>
-        </div>
-      ) : videos.length === 0 ? (
-        <div className="glass-panel rounded-3xl p-12 text-center max-w-md mx-auto border border-gray-800">
-          <Radio className="w-12 h-12 mx-auto mb-4 text-purple-400 opacity-60" />
-          <h3 className="text-lg font-bold text-white mb-1">No Videos in Feed Yet</h3>
-          <p className="text-xs text-gray-400 mb-6">
-            Generate your first vertical video in the AI Studio and publish it to the Qoneqt Global Feed!
-          </p>
-          <button
-            onClick={() => onSelectVideoForStudio && onSelectVideoForStudio()}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-bold shadow-lg shadow-purple-600/30 hover:opacity-90 transition"
-          >
-            Go to AI Studio
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {videos.map((vid, idx) => (
-            <div
-              key={vid._id || idx}
-              className="glass-panel rounded-3xl p-5 border border-gray-800/80 hover:border-purple-500/40 transition-all flex flex-col justify-between"
-            >
-              <div>
-                {/* Header */}
-                <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-gray-800/60">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 p-0.5">
-                      <div className="w-full h-full bg-black rounded-full flex items-center justify-center text-[10px] font-bold text-white">
-                        Q
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white truncate max-w-[140px]">
-                        @qoneqt_creator
-                      </h4>
-                      <p className="text-[10px] text-gray-400">
-                        {new Date(vid.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                    vid.status === 'PUBLISHED'
-                      ? 'bg-pink-500/10 text-pink-400 border-pink-500/20'
-                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  }`}>
-                    {vid.status === 'PUBLISHED' ? 'Published' : 'Ready'}
+        ) : videos.length === 0 ? (
+          <section className="mx-auto max-w-lg rounded-3xl border border-white/10 bg-[#100d18]/55 p-8 text-center shadow-xl shadow-black/25 backdrop-blur-xl">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-200"><Radio className="h-6 w-6" /></div>
+            <h2 className="mt-4 text-lg font-bold text-white">Your feed is waiting for its first story.</h2>
+            <p className="mt-2 text-sm leading-6 text-gray-400">Create a vertical video from the Home page and it will appear here when rendering is complete.</p>
+            <SpecularButton onClick={onSelectVideoForStudio} size="sm" radius={12} tint="#7c3aed" tintOpacity={0.8} blur={10} textColor="#ffffff" lineColor="#e9d5ff" baseColor="#4c1d95" className="mt-5">
+              Create a video <ArrowUpRight className="h-3.5 w-3.5" />
+            </SpecularButton>
+          </section>
+        ) : (
+          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {videos.map((video, index) => (
+              <article key={video._id || video.id || index} className="group overflow-hidden rounded-3xl border border-white/10 bg-[#100d18]/60 shadow-xl shadow-black/25 backdrop-blur-xl transition duration-300 hover:-translate-y-1 hover:border-purple-300/35">
+                <div className="relative aspect-[9/11] overflow-hidden bg-black">
+                  <video src={video.videoUrl} poster={video.thumbnailUrl} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]" muted loop playsInline preload="metadata" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#100d18] via-transparent to-black/15" />
+                  <span className="absolute right-3 top-3 rounded-full border border-white/15 bg-black/35 px-2 py-1 text-[10px] font-bold text-white backdrop-blur">
+                    {video.status === 'PUBLISHED' ? 'Published' : 'Ready'}
                   </span>
+                  <div className="absolute inset-x-0 bottom-0 p-3">
+                    <div className="flex items-center gap-2 text-xs text-purple-100">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-400 to-pink-400 text-[10px] font-black text-white">Q</span>
+                      @qoneqt_creator
+                      <CheckCircle2 className="h-3.5 w-3.5 text-indigo-200" />
+                    </div>
+                    <h2 className="mt-2 line-clamp-2 text-base font-extrabold text-white">{video.title || video.topic || 'AI generated video'}</h2>
+                  </div>
                 </div>
-
-                {/* Video Preview Canvas */}
-                <div className="mb-3">
-                  <VideoPlayer
-                    videoUrl={vid.videoUrl}
-                    thumbnailUrl={vid.thumbnailUrl}
-                    title={vid.title || vid.topic}
-                    hashtags={vid.hashtags}
-                  />
+                <div className="flex items-center justify-between gap-3 p-3">
+                  <p className="line-clamp-1 text-xs text-gray-400">{(video.hashtags || ['#Qoneqt', '#AI']).slice(0, 3).join(' ')}</p>
+                  <a href={video.videoUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-purple-200 transition hover:text-white">
+                    Watch <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
                 </div>
-
-                {/* Metadata */}
-                <div className="space-y-1.5 mt-2">
-                  <h4 className="text-sm font-bold text-white line-clamp-1">{vid.title || vid.topic}</h4>
-                  <p className="text-xs text-gray-400 line-clamp-2">{vid.description || vid.topic}</p>
-                </div>
-              </div>
-
-              {/* Tags and Footer */}
-              <div className="mt-4 pt-3 border-t border-gray-800/60 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-indigo-400 font-medium">
-                  <span>{(vid.hashtags || ['#Qoneqt', '#AI']).slice(0, 2).join(' ')}</span>
-                </div>
-
-                <a
-                  href={vid.videoUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-white transition"
-                >
-                  <span>Direct URL</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+              </article>
+            ))}
+          </section>
+        )}
+      </div>
+    </main>
   );
 }
