@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Home, Sparkles, Video, Film, Radio, Settings } from 'lucide-react';
+import { Home, Video, Film, Radio, Settings } from 'lucide-react';
 import { settingsApi } from '../services/api';
 
 export default function Navbar({ activeTab, setActiveTab }) {
@@ -21,7 +21,6 @@ export default function Navbar({ activeTab, setActiveTab }) {
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
-    { id: 'studio', label: 'AI Studio', icon: Sparkles },
     { id: 'feed', label: 'Qoneqt Feed', icon: Radio },
     { id: 'history', label: 'History & Vault', icon: Film },
     { id: 'settings', label: 'Integrations & API', icon: Settings },

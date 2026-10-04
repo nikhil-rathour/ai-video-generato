@@ -1,0 +1,46 @@
+.thought-line {
+  --tl-font: 16px;
+  color: #e9ddff;
+  font-size: var(--tl-font);
+  line-height: 1.25;
+}
+
+.thought-line__head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.thought-line__head:not(:disabled) { cursor: pointer; }
+.thought-line__glyph { width: 1.1em; height: 1.1em; color: #c4a2ff; }
+.thought-line__label { color: inherit; }
+.thought-line__timer { margin-left: 0.1em; color: #c6b9d9; font-variant-numeric: tabular-nums; }
+.thought-line__chevron { width: 1em; height: 1em; color: #baabcf; transition: transform 200ms ease; }
+.thought-line__chevron--open { transform: rotate(180deg); }
+
+.thought-line__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+  margin-top: 0.7em;
+  padding-left: 1.7em;
+  color: #c6b9d9;
+  font-size: 0.875em;
+}
+
+.thought-line__step { display: flex; align-items: center; gap: 0.55em; opacity: 0.62; }
+.thought-line__step[data-active] { color: #f2ecff; opacity: 1; }
+.thought-line__mark { display: grid; width: 1em; height: 1em; place-items: center; }
+.thought-line__mark svg { width: 0.95em; height: 0.95em; }
+.thought-line__pulse { width: 0.45em; height: 0.45em; border-radius: 999px; background: #c4a2ff; animation: thought-line-pulse 1.6s ease-in-out infinite; }
+
+@keyframes thought-line-pulse { 0%, 100% { opacity: 0.45; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+
+@media (prefers-reduced-motion: reduce) { .thought-line__pulse { animation: none; } }

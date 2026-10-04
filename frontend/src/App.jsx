@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
-import Studio from './pages/Studio';
 import Feed from './pages/Feed';
 import History from './pages/History';
 import Settings from './pages/Settings';
 import Home from './pages/Home';
+import VideoPreview from './pages/VideoPreview';
 import { Sparkles, Heart } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
-  const [studioPrompt, setStudioPrompt] = useState('');
+  const [previewVideo, setPreviewVideo] = useState(null);
 
-  const openGenerator = (prompt) => {
-    setStudioPrompt(prompt);
-    setActiveTab('studio');
+  const openPreview = (video) => {
+    setPreviewVideo(video);
+    setActiveTab('preview');
   };
-
   return (
     <div className="min-h-screen bg-[#0b0f19] flex flex-col justify-between selection:bg-purple-600 selection:text-white">
       <div>
@@ -24,9 +23,9 @@ export default function App() {
 
         {/* Tab Routing */}
         <main>
-          {activeTab === 'home' && <Home onStartGeneration={openGenerator} />}
-          {activeTab === 'studio' && <Studio initialTopic={studioPrompt} />}
-          {activeTab === 'feed' && <Feed onSelectVideoForStudio={() => setActiveTab('studio')} />}
+          {activeTab === 'home' && <Home onPreview={openPreview} />}
+          {activeTab === 'preview' && <VideoPreview video={previewVideo} onBack={() => setActiveTab('home')} />}
+          {activeTab === 'feed' && <Feed onSelectVideoForStudio={() => setActiveTab('home')} />}
           {activeTab === 'history' && <History />}
           {activeTab === 'settings' && <Settings />}
         </main>
