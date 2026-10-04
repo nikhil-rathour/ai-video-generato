@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Video, Film, Radio, Settings, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Home, Sparkles, Video, Film, Radio, Settings } from 'lucide-react';
 import { settingsApi } from '../services/api';
 
 export default function Navbar({ activeTab, setActiveTab }) {
@@ -20,6 +20,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
   }, []);
 
   const navItems = [
+    { id: 'home', label: 'Home', icon: Home },
     { id: 'studio', label: 'AI Studio', icon: Sparkles },
     { id: 'feed', label: 'Qoneqt Feed', icon: Radio },
     { id: 'history', label: 'History & Vault', icon: Film },
@@ -30,7 +31,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
     <header className="sticky top-0 z-50 glass-panel border-b border-gray-800/80 px-4 lg:px-8 py-3.5">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand Logo */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('studio')}>
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 p-0.5 flex items-center justify-center shadow-lg shadow-purple-500/20">
             <div className="w-full h-full bg-[#0b0f19] rounded-[10px] flex items-center justify-center">
               <Video className="w-5 h-5 text-indigo-400" />

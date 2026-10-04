@@ -4,10 +4,17 @@ import Studio from './pages/Studio';
 import Feed from './pages/Feed';
 import History from './pages/History';
 import Settings from './pages/Settings';
+import Home from './pages/Home';
 import { Sparkles, Heart } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('studio');
+  const [activeTab, setActiveTab] = useState('home');
+  const [studioPrompt, setStudioPrompt] = useState('');
+
+  const openGenerator = (prompt) => {
+    setStudioPrompt(prompt);
+    setActiveTab('studio');
+  };
 
   return (
     <div className="min-h-screen bg-[#0b0f19] flex flex-col justify-between selection:bg-purple-600 selection:text-white">
@@ -17,7 +24,8 @@ export default function App() {
 
         {/* Tab Routing */}
         <main>
-          {activeTab === 'studio' && <Studio />}
+          {activeTab === 'home' && <Home onStartGeneration={openGenerator} />}
+          {activeTab === 'studio' && <Studio initialTopic={studioPrompt} />}
           {activeTab === 'feed' && <Feed onSelectVideoForStudio={() => setActiveTab('studio')} />}
           {activeTab === 'history' && <History />}
           {activeTab === 'settings' && <Settings />}

@@ -7,7 +7,7 @@ import SceneTimeline from '../components/SceneTimeline';
 import ScriptViewer from '../components/ScriptViewer';
 import QoneqtPublishModal from '../components/QoneqtPublishModal';
 
-export default function Studio() {
+export default function Studio({ initialTopic = '' }) {
   const [topic, setTopic] = useState('5 AI tools every developer should know in 2026');
   const [duration, setDuration] = useState(30);
   const [style, setStyle] = useState('Educational');
@@ -25,6 +25,10 @@ export default function Studio() {
 
   // Publish modal
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (initialTopic) setTopic(initialTopic);
+  }, [initialTopic]);
 
   // Quick Prompt Presets
   const promptPresets = [
